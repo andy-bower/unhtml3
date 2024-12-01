@@ -1,0 +1,203 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of UNHTML</TITLE>
+</HEAD><BODY>
+<H1>UNHTML</H1>
+Section: User Commands  (1)<BR><A HREF="#index">Index</A>
+<A HREF="/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+<BR>BSD mandoc<BR>
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+
+
+<B>unhtml</B>
+
+ - Strip HTML markup from a document and output UTF-8 plain text
+
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>unhtml</B>
+
+
+-<B>help</B>
+
+<BR><B>unhtml</B>
+
+
+-<B>version</B>
+
+<BR><B>unhtml</B>
+
+
+[-<B>comment</B>
+
+]
+
+[-<B>cdata </B><I>text | comment</I>
+
+
+
+]
+
+[<I>FILENAME.html</I>
+
+]
+
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+The
+<B>unhtml</B>
+
+
+utility remove HTML markup from a document and outputs plain text on stdout in
+the UTF-8 charset. The input needs to be UTF-8; if the input uses another
+character set then this should be transformed first.
+<P>
+
+<B>unhtml</B>
+
+
+is an extractor not a renderer; other tools are more appropriate if the output
+is to be embellished with rendering based on HTML markup.
+<P>
+
+Content within the
+`&lt;SCRIPT&gt;'
+
+and
+`&lt;STYLE&gt;'
+
+elements is ignored.
+<A NAME="lbAE">&nbsp;</A>
+<H3>Options</H3>
+
+The options are as follows:
+<DL COMPACT>
+<P>
+
+<DT><B>-version</B>
+
+
+<DD>
+Show the version information.
+<DT><B>-help</B>
+
+
+<DD>
+Show usage and other help.
+<DT><B>-comment</B>
+
+
+<DD>
+Include comments in the output.
+<DT><B>-cdata=comment</B>
+
+
+<DD>
+Treat CDATA sections as comments. The default is to treat CDATA sections
+simply as text that is immune from being interpreted as special HTML
+sequences.
+</DL>
+<P>
+
+<A NAME="lbAF">&nbsp;</A>
+<H2>EXAMPLES</H2>
+
+Convert
+`index.html'
+
+to text on stdout.
+
+<BLOCKQUOTE><TT>unhtml index.html</TT></BLOCKQUOTE>
+<P>
+
+Convert HTML on stdin into text on stdout.
+
+<BLOCKQUOTE><TT>unhtml &lt; index.html</TT></BLOCKQUOTE>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="/cgi-bin/man/man2html?1+w3m">w3m</A>(1)
+
+
+<A NAME="lbAH">&nbsp;</A>
+<H2>HISTORY</H2>
+
+<B>unhtml</B>
+
+
+version 3 is a complete rewrite that is backwards-compatible with
+<B>unhtml</B>
+
+
+version 2.3.9
+Po originally known as
+
+<B>clean</B>
+
+Pc written by Kevin Swan in 1998.
+
+<P>
+
+The new version uses
+Lb libgumbo
+
+to parse the HTML before extracting the text to ensure accurate handling of
+doctypes, comments, CDATA sections and HTML 5 tag soup and to upgrade from
+only handling ISO-8859-1 to using UTF-8 throughout.
+<A NAME="lbAI">&nbsp;</A>
+<H2>AUTHORS</H2>
+
+An -nosplit
+
+An Andrew Bower Aq Mt <A HREF="mailto:andrew@bower.uk">andrew@bower.uk</A>
+
+<A NAME="lbAJ">&nbsp;</A>
+<H2>BUGS</H2>
+
+<B>unhtml</B>
+
+
+only outputs UTF-8 and does not convert its output to the character set of
+the current locale.
+<P>
+
+<B>unhtml</B>
+
+
+ignores any character set defined within a
+`&lt;META&gt;'
+
+element or XML header and treats the input as UTF-8 regardless.
+<P>
+
+Please raise bug reports at:
+Lk <A HREF="https://github.com/andy-bower/unhtml3/issues">https://github.com/andy-bower/unhtml3/issues</A>
+
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DL>
+<DT><A HREF="#lbAE">Options</A><DD>
+</DL>
+<DT><A HREF="#lbAF">EXAMPLES</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+<DT><A HREF="#lbAH">HISTORY</A><DD>
+<DT><A HREF="#lbAI">AUTHORS</A><DD>
+<DT><A HREF="#lbAJ">BUGS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:01:20 GMT, December 01, 2024
+</BODY>
+</HTML>

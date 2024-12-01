@@ -1,0 +1,202 @@
+Man page of UNHTML
+
+UNHTML
+Section: User Commands  (1)Index
+Return to Main Contents
+BSD mandoc
+ 
+NAME
+
+
+
+unhtml
+
+ - Strip HTML markup from a document and output UTF-8 plain text
+
+ 
+SYNOPSIS
+
+unhtml
+
+
+-help
+
+unhtml
+
+
+-version
+
+unhtml
+
+
+[-comment
+
+]
+
+[-cdata text | comment
+
+
+
+]
+
+[FILENAME.html
+
+]
+
+ 
+DESCRIPTION
+
+The
+unhtml
+
+
+utility remove HTML markup from a document and outputs plain text on stdout in
+the UTF-8 charset. The input needs to be UTF-8; if the input uses another
+character set then this should be transformed first.
+
+
+unhtml
+
+
+is an extractor not a renderer; other tools are more appropriate if the output
+is to be embellished with rendering based on HTML markup.
+
+
+Content within the
+`<SCRIPT>'
+
+and
+`<STYLE>'
+
+elements is ignored.
+ 
+Options
+
+The options are as follows:
+
+
+
+-version
+
+
+
+Show the version information.
+-help
+
+
+
+Show usage and other help.
+-comment
+
+
+
+Include comments in the output.
+-cdata=comment
+
+
+
+Treat CDATA sections as comments. The default is to treat CDATA sections
+simply as text that is immune from being interpreted as special HTML
+sequences.
+
+
+
+ 
+EXAMPLES
+
+Convert
+`index.html'
+
+to text on stdout.
+
+unhtml index.html
+
+
+Convert HTML on stdin into text on stdout.
+
+unhtml < index.html
+ 
+SEE ALSO
+
+w3m(1)
+
+
+ 
+HISTORY
+
+unhtml
+
+
+version 3 is a complete rewrite that is backwards-compatible with
+unhtml
+
+
+version 2.3.9
+Po originally known as
+
+clean
+
+Pc written by Kevin Swan in 1998.
+
+
+
+The new version uses
+Lb libgumbo
+
+to parse the HTML before extracting the text to ensure accurate handling of
+doctypes, comments, CDATA sections and HTML 5 tag soup and to upgrade from
+only handling ISO-8859-1 to using UTF-8 throughout.
+ 
+AUTHORS
+
+An -nosplit
+
+An Andrew Bower Aq Mt andrew@bower.uk
+
+ 
+BUGS
+
+unhtml
+
+
+only outputs UTF-8 and does not convert its output to the character set of
+the current locale.
+
+
+unhtml
+
+
+ignores any character set defined within a
+`<META>'
+
+element or XML header and treats the input as UTF-8 regardless.
+
+
+Please raise bug reports at:
+Lk https://github.com/andy-bower/unhtml3/issues
+
+
+
+
+
+ Index
+
+NAME
+SYNOPSIS
+DESCRIPTION
+
+Options
+
+EXAMPLES
+SEE ALSO
+HISTORY
+AUTHORS
+BUGS
+
+
+This document was created by
+man2html,
+using the manual pages.
+Time: 21:01:20 GMT, December 01, 2024
+
+

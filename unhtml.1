@@ -1,0 +1,94 @@
+.Dd December 1, 2024
+.Dt UNHTML 1
+.Os
+.Sh NAME
+.Nm unhtml
+.Nd Strip HTML markup from a document and output UTF-8 plain text
+.Sh SYNOPSIS
+.Nm
+.Fl help
+.Nm
+.Fl version
+.Nm
+.Op Fl comment
+.Op Fl cdata Ar text | comment
+.Op Ar FILENAME.html
+.Sh DESCRIPTION
+The
+.Nm
+utility removes HTML markup from a document and outputs plain text on stdout
+in the UTF-8 charset. The input needs to be UTF-8; if the input uses another
+character set then this should be transformed first.
+.Pp
+.Nm
+is an extractor not a renderer; other tools are more appropriate if the output
+is to be embellished with rendering based on HTML markup.
+.Pp
+Content within the
+.Ql <SCRIPT>
+and
+.Ql <STYLE>
+elements is ignored.
+.Ss Options
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl version
+Show the version information.
+.It Fl help
+Show usage and other help.
+.It Fl comment
+Include comments in the output.
+.It Fl cdata=comment
+Treat CDATA sections as comments. The default is to treat CDATA sections
+simply as text that is immune from being interpreted as special HTML
+sequences.
+.El
+.Sh EXAMPLES
+Convert
+.Ql index.html
+to text on stdout.
+.Dl unhtml index.html
+.Pp
+Convert HTML on stdin into text on stdout.
+.Dl unhtml < index.html
+.Sh SEE ALSO
+.Xr w3m 1
+.Sh HISTORY
+.Nm
+version 3 is a complete rewrite that is backwards-compatible with
+.Nm
+version 2.3.9
+.Po
+originally known as
+.Nm clean
+.Pc
+written by Kevin Swan in 1998.
+.Pp
+The new version uses
+.Lb libgumbo
+to parse the HTML before extracting the text. This upgrades the character
+set handling from ISO-8859-1 only to UTF-8 and improves support for
+different dialects of HTML in use since the original version.
+.Sh AUTHORS
+.An -nosplit
+.An Andrew Bower Aq Mt andrew@bower.uk
+.Sh BUGS
+.Nm
+only outputs UTF-8 and does not convert its output to the character set of
+the current locale, if different.
+.Pp
+.Nm
+ignores the charset defined within a
+.Ql <META>
+element or XML header and treats the input as UTF-8 regardless.
+.Pp
+Entity definitions embedded within SGML DOCTYPE declarations confuse
+.Lb libgumbo ,
+leaving trailing
+.Ql ]>
+characters, since the parser is principally an HTML 5 tag soup parser that
+does not properly understand SGML (or XML), although it generally works
+adequately for XHTML and SGML-type HTML documents.
+.Pp
+Please raise bug reports at:
+.Lk https://github.com/andy-bower/unhtml3/issues
