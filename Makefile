@@ -3,24 +3,38 @@
 
 VERSION ?= 3.0.0
 CFLAGS ?= -g
-CFLAGS += -Wall -Wimplicit-fallthrough -Werror -std=c23 -D_GNU_SOURCE -DUNHTML_VERSION=$(VERSION)
-LDLIBS = -lgumbo
+CFLAGS += -MMD -MP -Wall -Wimplicit-fallthrough -Werror -std=c23 -D_GNU_SOURCE -DUNHTML_VERSION=$(VERSION) -I/usr/include/libxml2
+LDLIBS = -lgumbo -lxml2
 LOOSE_DIFF = diff -u --ignore-space-change --ignore-blank-lines
 INSTALL = install
-
+DEP = $(wildcard *.d)
 prefix ?= /usr
-
 name := unhtml
 testfiles := testfiles/
+OBJS = unhtml.o
+
+ifndef NO_GUMBO
+CFLAGS += -DWITH_GUMBO
+LDLIBS += -lgumbo
+OBJS += parse-gumbo.o
+endif
+
+ifndef NO_LIBXML2
+CFLAGS += -DWITH_LIBXML2 -I/usr/include/libxml2
+LDLIBS += -lxml2
+OBJS += parse-libxml2.o
+endif
 
 .PHONY: all clean install check debug clean-tests check-testfiles
 
 all: $(name)
 
-$(name): unhtml.o
+-include $(DEP)
+
+$(name): $(OBJS)
 
 clean:
-	$(RM) $(name) unhtml.o
+	$(RM) $(name) $(OBJS)
 
 install:
 	$(INSTALL) -m 755 -D $(name) $(DESTDIR)$(prefix)/bin/$(name)

@@ -1,8 +1,7 @@
-# unhtml 3.0+
+# unhtml 3.x
 
 The `unhtml` utility removes HTML markup from a document and outputs plain
-text on stdout in the UTF-8 charset. The input needs to be UTF-8; if the
-input uses another character set then this should be transformed first.
+text on stdout in the UTF-8 charset.
 
 `unhtml` is an extractor not a renderer; other tools such as `w3m` are
 more appropriate if the output is to be embellished with rendering based
@@ -10,25 +9,28 @@ on HTML markup.
 
 Content within `<SCRIPT>` and `<STYLE>` elements is ignored.
 
-# Relationship to unhtml 2.2, 2.3
+`unhtml` can be built with `libxml2` and/or `libgumbo` parsers to cover the
+set of HTML, XHTML and HTML 5 tag-soup documents.
 
-This version of unhtml is a complete rewrite and drop-in replacement of unhtml
-(originally known as 'clean') by Kevin Swan in 1998. The original program
+# Relationship to unhtml 2.x
+
+This version of unhtml is a complete rewrite of and drop-in replacement for
+unhtml (originally known as 'clean') by Kevin Swan in 1998. The original program
 appears to be abandoned upstream and is currently maintained in Debian as
 unhtml at https://salsa.debian.org/debian/unhtml/-/tree/upstream?ref_type=heads
 
 # Motivation
 
 The current `unhtml` package in Debian has significant flaws which in my
-view aren't sensible fixable by patching the old version. This new version
-uses a proper HTML parser library (initially, libgumbo, for its ability to
-understand HTML 5 tag soup) with complete capability to handle entities.
+view aren't sensibly fixable by patching the old version. This new version
+uses proper HTML and XHTML parser libraries with complete capability to
+handle entities.
 
 The major flaws of the old package are:
 
 * Only understands and emits ISO-8859-1, not UTF-8.
 * Has handling limitations with some constructs such as DOCTYPE, CDATA
-  sections and STYLE elements.
+  sections, comments and STYLE elements.
 
 The existing package has a non-trivial
 [popcon count](https://qa.debian.org/popcon.php?package=unhtml) if I have
@@ -40,17 +42,8 @@ for that constituency of users.
 
 # Limitations
 
-Numerous... I'll raise some as _issues_ in due course.
-
-Essentially _if I wanted to go there I wouldn't start here_. See above for
-rationale for existence!
-
-* **Only** understands UTF-8
-  - does not convert output to current locale
-  - ignores alternative charset selected via `<META>` or `<?xml>`
-    declarations.
-* Has issues with some SGML content (see `unhtml(1)` manpage).
-* This version is slower than the original and `xmllint` (but faster than `w3m`).
+* Does not convert output to current locale - it will always be UTF-8.
+* If the Gumbo parser for HTML 5 tag soup is used then the input must be UTF-8.
 
 # Contributing
 

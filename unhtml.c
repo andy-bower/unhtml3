@@ -6,43 +6,45 @@
  * Version 3.0 onwards of unhtml is a complete rewrite in 2024 of v2.3.9 of
  * unhtml written by Kevin Swan in 1998. No portion of the original software
  * remains but the user interface and behaviour is compatible.
- *
- * Uses libgumbo to parse the HTML, walks the resultant tree and renders
- * only text content. The output is in UTF-8.
  */
 
 #include <err.h>
 #include <fcntl.h>
 #include <string.h>
 #include <getopt.h>
-#include <gumbo.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 
+#include "unhtml.h"
+#include "parse-gumbo.h"
+#include "parse-libxml2.h"
+
 #define STRINGIFY(x) _STRINGIFY(x)
 #define _STRINGIFY(x) #x
-
-struct options {
-  bool comment;
-  bool cdata_is_comment;
-  bool error;
-  bool version;
-  bool help;
-  const char *file;
-} opt;
 
 enum opt:int {
   OPT_VERSION = 0x1000,
   OPT_HELP,
   OPT_COMMENT,
   OPT_CDATA,
+  OPT_PARSER,
 };
+
+struct options opt;
+
+struct parser parsers[] = {
+LIBXML2_PARSERS
+GUMBO_PARSERS
+};
+
+static constexpr size_t num_parsers = sizeof parsers/sizeof *parsers;
 
 static const char *version_str = STRINGIFY(UNHTML_VERSION);
 
@@ -54,7 +56,8 @@ static void usage(FILE *out) {
           "OPTIONS\n"
           "  -comment        include comments\n"
           "  -cdata=comment  treat CDATA sections as comment\n"
-          "  -cdata=text     treat CDATA sections as text (default)\n",
+          "  -cdata=text     treat CDATA sections as text (default)\n"
+          "  -parser=PARSER  use PARSER parser\n",
           program_invocation_short_name,
           program_invocation_short_name,
           program_invocation_short_name);
@@ -68,12 +71,25 @@ static void version(FILE *out) {
           version_str);
 }
 
+void list_parsers(FILE *stream) {
+  fprintf(stream, "Parsers:\n");
+  for (int i = 0; i < num_parsers; i++)
+    fprintf(stream, "  %s\n", parsers[i].name);
+}
+
+struct parser *find_parser(const char *name) {
+  int i;
+  for (i = 0; i < num_parsers && strcmp(parsers[i].name, name); i++);
+  return i == num_parsers ? nullptr : parsers + i;
+}
+
 static void parse_options(int argc, char *argv[]) {
   const struct option options[] = {
     { "version", no_argument,       0, OPT_VERSION },
     { "help",    no_argument,       0, OPT_HELP },
     { "comment", no_argument,       0, OPT_COMMENT },
     { "cdata",   required_argument, 0, OPT_CDATA },
+    { "parser",  required_argument, 0, OPT_PARSER },
     { nullptr }
   };
   int option_index;
@@ -100,6 +116,12 @@ static void parse_options(int argc, char *argv[]) {
       else
         opt.error = true;
       break;
+    case OPT_PARSER:
+      if (!(opt.parser = find_parser(optarg))) {
+        fprintf(stderr, "no such parser: %s\n", optarg);
+        list_parsers(stderr);
+        opt.error = true;
+      }
     case -1:
       /* EOF */
       break;
@@ -116,49 +138,6 @@ static void parse_options(int argc, char *argv[]) {
 
   if (optind < argc)
     opt.error = true;
-}
-
-static void walk_tree(GumboNode *node) {
-  /* By default, neither render content nor descend tree further */
-  GumboVector *children = nullptr;
-  GumboText *text = nullptr;
-
-  switch (node->type) {
-  case GUMBO_NODE_CDATA:
-    if (!opt.cdata_is_comment || opt.comment)
-      text = &node->v.text;
-    break;
-  case GUMBO_NODE_COMMENT:
-    if (opt.comment)
-      text = &node->v.text;
-    break;
-  case GUMBO_NODE_TEXT:
-  case GUMBO_NODE_WHITESPACE:
-    text = &node->v.text;
-    break;
-  case GUMBO_NODE_DOCUMENT:
-    children = &node->v.document.children;
-    break;
-  case GUMBO_NODE_ELEMENT:
-    switch (node->v.element.tag) {
-    case GUMBO_TAG_SCRIPT:
-    case GUMBO_TAG_STYLE:
-      /* Do not render content of these tags */
-      break;
-    default:
-      children = &node->v.element.children;
-    }
-    break;
-  default:
-    /* Do nothing */
-  }
-
-  if (text)
-      fputs(text->text, stdout);
-
-  if (children)
-    for (int child = 0; child < children->length; child++)
-      walk_tree((GumboNode *) children->data[child]);
 }
 
 static size_t max_input_buffer(void) {
@@ -185,14 +164,17 @@ static size_t max_input_buffer(void) {
   return max_buf;
 }
 
-struct mapped_buffer {
-  char *data;
-  size_t length;
-  size_t mapped;
-  int fd;
-};
+static void write_resource_uri(struct mapped_buffer *map, const char *fmt, ...) {
+  va_list args;
+  char *result;
 
-int map_file(struct mapped_buffer *map_ret, size_t max, const char *file) {
+  va_start(args);
+  vasprintf(&result, fmt, args);
+  va_end(args);
+  map->uri = strdup(result);
+}
+
+static int map_file(struct mapped_buffer *map_ret, size_t max, const char *file) {
   struct mapped_buffer map = { };
   struct stat statbuf;
   int rc;
@@ -222,6 +204,8 @@ int map_file(struct mapped_buffer *map_ret, size_t max, const char *file) {
     goto fail;
   }
 
+  write_resource_uri(&map, "file:///%s", file);
+
   *map_ret = map;
   return 0;
 
@@ -231,7 +215,7 @@ finish:
   return 1;
 }
 
-int map_stream(struct mapped_buffer *map_ret, size_t max, FILE *stream) {
+static int map_stream(struct mapped_buffer *map_ret, size_t max, FILE *stream) {
   struct mapped_buffer map = { .fd = -1 };
 
   map.data = mmap(nullptr, map.mapped = max,
@@ -252,18 +236,32 @@ int map_stream(struct mapped_buffer *map_ret, size_t max, FILE *stream) {
   /* Zero-terminate the input */
   map.data[map.length++] = '\0';
 
+  write_resource_uri(&map, "file:///%s", "/dev/stdin");
+
   *map_ret = map;
   return 0;
 }
 
+static void free_map(struct mapped_buffer *map) {
+  munmap(map->data, map->mapped);
+  if (map->fd != -1)
+    close(map->fd);
+
+  if (map->uri != nullptr)
+    free(map->uri);
+}
+
 int main(int argc, char *argv[]) {
   struct mapped_buffer input;
-  GumboOutput *doc;
   size_t max_buf;
   int rc;
 
   max_buf = max_input_buffer();
   parse_options(argc, argv);
+
+  /* Choose default parser */
+  if (opt.parser == nullptr)
+    opt.parser = parsers + 0;
 
   if (opt.error) {
     usage(stderr);
@@ -277,6 +275,7 @@ int main(int argc, char *argv[]) {
     fprintf(stdout,
             "\nMaximum input size: %.1fMB\n",
             max_buf / (1024.0 * 1024.0));
+    list_parsers(stdout);
   }
 
   if (opt.version)
@@ -284,7 +283,6 @@ int main(int argc, char *argv[]) {
 
   if (opt.help || opt.version)
     return EXIT_SUCCESS;
-
 
   if (opt.file) {
     rc = map_file(&input, max_buf, opt.file);
@@ -295,17 +293,9 @@ int main(int argc, char *argv[]) {
   if (rc != 0)
     return EXIT_FAILURE;
 
-  doc = gumbo_parse(input.data);
-  if (doc) {
-    walk_tree(doc->root);
-    gumbo_destroy_output(&kGumboDefaultOptions, doc);
-  } else {
-    fprintf(stderr, "html parsing failed\n");
-  }
+  rc = opt.parser->parse_fn(&input);
 
-  munmap(input.data, input.mapped);
-  if (input.fd != -1)
-    close(input.fd);
+  free_map(&input);
 
   return EXIT_SUCCESS;
 }
