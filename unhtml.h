@@ -5,6 +5,7 @@
 #define _UNHTML_H
 
 #include <regex.h>
+#include <stdarg.h>
 
 #include "load.h"
 
@@ -26,10 +27,21 @@ struct options {
   bool error;
   bool version;
   bool help;
+  bool verbose;
   const char *file;
   int parser;
 };
 
 extern struct options opt;
+
+static inline void logv(const char *fmt, ...) {
+  va_list args;
+
+  if (opt.verbose) {
+    va_start(args);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+  }
+}
 
 #endif

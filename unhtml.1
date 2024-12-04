@@ -13,6 +13,7 @@
 .Op Fl comment
 .Op Fl cdata Ar text | comment
 .Op Fl parser Ar html | xml | tagsoup
+.Op Fl verbose
 .Op Ar FILENAME.html
 .Sh DESCRIPTION
 The
@@ -44,6 +45,12 @@ simply as text that is immune from being interpreted as special HTML
 sequences.
 .It Fl parser
 Choose between the parser types for which support is compiled in.
+If a parse is not specified,
+.Nm
+first tries to determine the correct choice from the content of the file and
+falls back to the classic HTML parser.
+.It Fl verbose
+Output verbose logging information on stderr.
 .El
 .Sh EXAMPLES
 Convert

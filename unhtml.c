@@ -31,6 +31,7 @@ enum opt:int {
   OPT_COMMENT,
   OPT_CDATA,
   OPT_PARSER,
+  OPT_VERBOSE,
 };
 
 struct options opt;
@@ -50,6 +51,7 @@ static void usage(FILE *out) {
           "       %s -help                 show help\n"
           "       %s [OPTIONS] [FILENAME]  process FILENAME or stdin\n\n"
           "OPTIONS\n"
+	  "  -verbose        show verbose output\n"
           "  -comment        include comments\n"
           "  -cdata=comment  treat CDATA sections as comment\n"
           "  -cdata=text     treat CDATA sections as text (default)\n"
@@ -90,7 +92,7 @@ void init_parsers(void) {
     if (p->def->imatch_pat) {
       rc = regcomp(&p->match_re, p->def->imatch_pat, REG_EXTENDED | REG_ICASE);
       if (rc != 0)
-	fprintf(stderr, "error compiling regex for choosing %s parser\n", p->def->name);
+	logv("error compiling regex for choosing %s parser\n", p->def->name);
       else
         p->has_matcher = true;
     }
@@ -122,12 +124,11 @@ void parser_match(struct mapped_buffer *input) {
 
   if (i != num_parsers) {
     opt.parser = i;
-    fprintf(stderr,
-            "selected '%s' parser based on content\n",
-            parsers[i].def->name);
+    logv("selected '%s' parser based on content\n",
+         parsers[i].def->name);
   } else {
     opt.parser = -1;
-    fprintf(stderr, "no parser matched, using default\n");
+    logv("no parser matched, using default\n");
   }
 }
 
@@ -146,6 +147,7 @@ static void parse_options(int argc, char *argv[]) {
     { "comment", no_argument,       0, OPT_COMMENT },
     { "cdata",   required_argument, 0, OPT_CDATA },
     { "parser",  required_argument, 0, OPT_PARSER },
+    { "verbose", no_argument,       0, OPT_VERBOSE },
     { nullptr }
   };
   int option_index;
@@ -180,6 +182,10 @@ static void parse_options(int argc, char *argv[]) {
         list_parsers(stderr);
         opt.error = true;
       }
+      break;
+    case OPT_VERBOSE:
+      opt.verbose = true;
+      break;
     case -1:
       /* EOF */
       break;
