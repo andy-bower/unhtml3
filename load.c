@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: MIT */
 /* SPDX-FileCopyrightText: (c) Copyright 2024 Andrew Bower <andrew@bower.uk> */
 
-#include <err.h>
 #include <fcntl.h>
 #include <string.h>
-#include <getopt.h>
-#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

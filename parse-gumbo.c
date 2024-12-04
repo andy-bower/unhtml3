@@ -7,19 +7,7 @@
  * only text content. The output is in UTF-8.
  */
 
-#include <err.h>
-#include <fcntl.h>
-#include <string.h>
-#include <getopt.h>
 #include <gumbo.h>
-#include <errno.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/resource.h>
-#include <sys/stat.h>
 
 #include "parse-gumbo.h"
 
