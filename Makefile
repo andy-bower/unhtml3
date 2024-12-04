@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: (c) Copyright 2024 Andrew Bower <andrew@bower.uk>
 
 VERSION ?= 3.0.0
-CFLAGS ?= -g
+CFLAGS ?= -g -O2
 CFLAGS += -MMD -MP -Wall -Wimplicit-fallthrough -Werror -std=c23 -D_GNU_SOURCE -DUNHTML_VERSION=$(VERSION) -I/usr/include/libxml2
 LDLIBS = -lgumbo -lxml2
 LOOSE_DIFF = diff -u --ignore-space-change --ignore-blank-lines
