@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: MIT */
 /* SPDX-FileCopyrightText: (c) Copyright 2024 Andrew Bower <andrew@bower.uk> */
 
-#ifndef _UNHTML_H
-#define _UNHTML_H
+#ifndef _LOAD_H
+#define _LOAD_H
 
 #include <err.h>
 #include <fcntl.h>
@@ -17,23 +17,16 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 
-#include "load.h"
-
-struct parser {
-  char *name;
-  int (*parse_fn)(struct mapped_buffer *input);
+struct mapped_buffer {
+  char *data;
+  size_t length;
+  size_t mapped;
+  int fd;
+  char *uri;
 };
 
-struct options {
-  bool comment;
-  bool cdata_is_comment;
-  bool error;
-  bool version;
-  bool help;
-  const char *file;
-  struct parser *parser;
-};
-
-extern struct options opt;
+extern int map_file(struct mapped_buffer *map_ret, size_t max, const char *file);
+extern int map_stream(struct mapped_buffer *map_ret, size_t max, FILE *stream);
+extern void free_map(struct mapped_buffer *map);
 
 #endif

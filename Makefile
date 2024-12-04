@@ -11,7 +11,8 @@ DEP = $(wildcard *.d)
 prefix ?= /usr
 name := unhtml
 testfiles := testfiles/
-OBJS = unhtml.o
+
+OBJS = unhtml.o load.o
 
 ifndef NO_GUMBO
 CFLAGS += -DWITH_GUMBO
