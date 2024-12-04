@@ -35,12 +35,12 @@ enum opt:int {
 
 struct options opt;
 
-struct parser parsers[] = {
+const struct parser_defn *parser_defs[] = {
 LIBXML2_PARSERS
 GUMBO_PARSERS
 };
-
-static constexpr size_t num_parsers = sizeof parsers/sizeof *parsers;
+static constexpr size_t num_parsers = sizeof parser_defs/sizeof *parser_defs;
+static struct parser parsers[num_parsers];
 
 static const char *version_str = STRINGIFY(UNHTML_VERSION);
 
@@ -70,13 +70,73 @@ static void version(FILE *out) {
 void list_parsers(FILE *stream) {
   fprintf(stream, "Parsers:\n");
   for (int i = 0; i < num_parsers; i++)
-    fprintf(stream, "  %s\n", parsers[i].name);
+    fprintf(stream, "  %s\n", parser_defs[i]->name);
 }
 
-struct parser *find_parser(const char *name) {
+int find_parser(const char *name) {
   int i;
-  for (i = 0; i < num_parsers && strcmp(parsers[i].name, name); i++);
-  return i == num_parsers ? nullptr : parsers + i;
+  for (i = 0; i < num_parsers && strcmp(parser_defs[i]->name, name); i++);
+  return i == num_parsers ? -1 : i;
+}
+
+void init_parsers(void) {
+  int i;
+  memset(&parsers, '\0', sizeof parsers);
+  for (i = 0; i < num_parsers; i++) {
+    struct parser *p = parsers + i;
+    int rc;
+
+    p->def = parser_defs[i];
+    if (p->def->imatch_pat) {
+      rc = regcomp(&p->match_re, p->def->imatch_pat, REG_EXTENDED | REG_ICASE);
+      if (rc != 0)
+	fprintf(stderr, "error compiling regex for choosing %s parser\n", p->def->name);
+      else
+        p->has_matcher = true;
+    }
+  }
+}
+
+void parser_match(struct mapped_buffer *input) {
+  int i;
+
+  for (i = 0; i < num_parsers; i++) {
+    struct parser *p = parsers + i;
+    regmatch_t matches[1] = {
+      { 0, input->length - 1 }
+    };
+
+    /* Require the DOCTYPE or <?xml> prolog to be within the first 1KB of
+     * the input. These should occur before any other content anyway but
+     * comments can often be found beforehand so let's match liberally. */
+    if (matches[0].rm_eo > 1024)
+      matches[0].rm_eo = 1024;
+
+    if (p->has_matcher &&
+        regexec(&p->match_re,
+                input->data,
+                0, matches,
+                REG_STARTEND) == 0)
+      break;
+  }
+
+  if (i != num_parsers) {
+    opt.parser = i;
+    fprintf(stderr,
+            "selected '%s' parser based on content\n",
+            parsers[i].def->name);
+  } else {
+    opt.parser = -1;
+    fprintf(stderr, "no parser matched, using default\n");
+  }
+}
+
+void free_parsers(void) {
+  for (int i = 0; i < num_parsers; i++) {
+    if (parsers[i].has_matcher)
+      regfree(&parsers[i].match_re);
+  }
+  memset(parsers, '\0', sizeof parsers);
 }
 
 static void parse_options(int argc, char *argv[]) {
@@ -92,6 +152,8 @@ static void parse_options(int argc, char *argv[]) {
   int c;
 
   memset(&opt, '\0', sizeof opt);
+  opt.parser = -1;
+
   do {
     c = getopt_long_only(argc, argv, "", options, &option_index);
     switch (c) {
@@ -113,7 +175,7 @@ static void parse_options(int argc, char *argv[]) {
         opt.error = true;
       break;
     case OPT_PARSER:
-      if (!(opt.parser = find_parser(optarg))) {
+      if ((opt.parser = find_parser(optarg)) == -1) {
         fprintf(stderr, "no such parser: %s\n", optarg);
         list_parsers(stderr);
         opt.error = true;
@@ -166,11 +228,8 @@ int main(int argc, char *argv[]) {
   int rc;
 
   max_buf = max_input_buffer();
+  init_parsers();
   parse_options(argc, argv);
-
-  /* Choose default parser */
-  if (opt.parser == nullptr)
-    opt.parser = parsers + 0;
 
   if (opt.error) {
     usage(stderr);
@@ -202,9 +261,20 @@ int main(int argc, char *argv[]) {
   if (rc != 0)
     return EXIT_FAILURE;
 
-  rc = opt.parser->parse_fn(&input);
+  /* Attempt to determine HTML type */
+  if (opt.parser < 0) {
+    parser_match(&input);
+  }
+
+  /* Choose default parser */
+  if (opt.parser < 0) {
+    opt.parser = 0;
+  }
+
+  rc = parser_defs[opt.parser]->parse_fn(&input);
 
   free_map(&input);
+  free_parsers();
 
   return EXIT_SUCCESS;
 }
