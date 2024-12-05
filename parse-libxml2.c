@@ -104,7 +104,7 @@ int parse_xml(struct mapped_buffer *input) {
   xmlDocPtr doc;
   xmlNode *root;
   int rc = 1;
-  int options = 0;
+  int options = XML_PARSE_DTDLOAD;
 
   if ((ctx = xmlNewParserCtxt()) == NULL)
     goto fail1;
