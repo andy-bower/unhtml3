@@ -97,6 +97,18 @@ to text on stdout.
 .Pp
 Convert XHTML on stdin into text on stdout with smart rendering.
 .Dl unhtml -parser xml -render smart < index.xhtml
+.Sh FILES
+.Bl -tag -width Ds
+.It
+.Pa ${XDG_CONFIG_HOME}/unhtml
+Directory containing the local user's configuration files.
+.It
+.Pa /etc/unhtml
+Directory containing system configutation files.
+.It
+.Pa /usr/share/unhtml
+Directory containing default configuration files shipped with the application.
+.El
 .Sh SEE ALSO
 .Xr w3m 1
 .Sh HISTORY
