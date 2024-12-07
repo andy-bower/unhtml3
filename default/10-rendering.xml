@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config xmlns="tag:cdefg.uk,2024:sw/unhtml/config">
+  <elements op="replace">
+    <element tag="p" spacing="para"/>
+    <element tag="div" spacing="para"/>
+    <element tag="h1" spacing="para"/>
+    <element tag="h2" spacing="para"/>
+    <element tag="h3" spacing="para"/>
+    <element tag="h4" spacing="para"/>
+    <element tag="h5" spacing="para"/>
+    <element tag="h6" spacing="para"/>
+    <element tag="br" spacing="newline"/>
+    <element tag="li" spacing="newline"/>
+  </elements>
+</config>

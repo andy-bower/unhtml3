@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 
+#include "render.h"
 #include "parse-libxml2.h"
 
 static void walk_tree(xmlNode *node) {
@@ -54,11 +55,15 @@ static void walk_tree(xmlNode *node) {
   }
 
   if (content)
-      fputs((char *) node->content, stdout);
+    render_text(node->content);
 
-  if (follow)
-    for (xmlNode *child = node->children; child; child = child->next)
+  if (follow) {
+    for (xmlNode *child = node->children; child; child = child->next) {
+      render_element(node->name, false);
       walk_tree(child);
+      render_element(node->name, true);
+    }
+  }
 }
 
 int parse_html(struct mapped_buffer *input) {

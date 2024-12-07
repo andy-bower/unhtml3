@@ -4,10 +4,26 @@
 #ifndef _UNHTML_H
 #define _UNHTML_H
 
+#define STRINGIFY(x) _STRINGIFY(x)
+#define _STRINGIFY(x) #x
+
+#ifdef INST_PREFIX
+#define PREFIX STRINGIFY(INST_PREFIX)
+#else
+#define PREFIX "/usr/local"
+#endif
+#define UNHTML "unhtml"
+
 #include <regex.h>
 #include <stdarg.h>
 
 #include "load.h"
+
+enum render_mode {
+  RENDER_MODE_LITERAL = 0,
+  RENDER_MODE_SMART,
+  RENDER_MODE_MAX,
+};
 
 struct parser_defn {
   const char *name;
@@ -27,9 +43,11 @@ struct options {
   bool error;
   bool version;
   bool help;
-  bool verbose;
+  int verbosity;
   const char *file;
   int parser;
+  struct config_dir *confdirs;
+  enum render_mode render_mode;
 };
 
 extern struct options opt;
@@ -37,7 +55,17 @@ extern struct options opt;
 static inline void logv(const char *fmt, ...) {
   va_list args;
 
-  if (opt.verbose) {
+  if (opt.verbosity >= 1) {
+    va_start(args);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+  }
+}
+
+static inline void logvv(const char *fmt, ...) {
+  va_list args;
+
+  if (opt.verbosity >= 2) {
     va_start(args);
     vfprintf(stderr, fmt, args);
     va_end(args);

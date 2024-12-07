@@ -7,14 +7,17 @@
  * only text content. The output is in UTF-8.
  */
 
+#include <uchar.h>
 #include <gumbo.h>
 
+#include "render.h"
 #include "parse-gumbo.h"
 
 static void walk_tree(GumboNode *node) {
   /* By default, neither render content nor descend tree further */
   GumboVector *children = nullptr;
   GumboText *text = nullptr;
+  const char8_t *tag = nullptr;
 
   switch (node->type) {
   case GUMBO_NODE_CDATA:
@@ -40,6 +43,8 @@ static void walk_tree(GumboNode *node) {
       break;
     default:
       children = &node->v.element.children;
+    if (node->v.element.tag < GUMBO_TAG_UNKNOWN)
+      tag = (char8_t *) gumbo_normalized_tagname(node->v.element.tag);
     }
     break;
   default:
@@ -47,11 +52,16 @@ static void walk_tree(GumboNode *node) {
   }
 
   if (text)
-      fputs(text->text, stdout);
+    render_text((char8_t *) text->text);
 
   if (children)
-    for (int child = 0; child < children->length; child++)
+    for (int child = 0; child < children->length; child++) {
+      if (tag)
+        render_element(tag, false);
       walk_tree((GumboNode *) children->data[child]);
+      if (tag)
+        render_element(tag, false);
+    }
 }
 
 int parse_tagsoup(struct mapped_buffer *input) {

@@ -19,11 +19,9 @@
 
 #include "unhtml.h"
 #include "load.h"
+#include "config.h"
 #include "parse-gumbo.h"
 #include "parse-libxml2.h"
-
-#define STRINGIFY(x) _STRINGIFY(x)
-#define _STRINGIFY(x) #x
 
 enum opt:int {
   OPT_VERSION = 0x1000,
@@ -32,9 +30,16 @@ enum opt:int {
   OPT_CDATA,
   OPT_PARSER,
   OPT_VERBOSE,
+  OPT_CONFDIR,
+  OPT_RENDER,
 };
 
 struct options opt;
+
+const char *render_mode_names[RENDER_MODE_MAX] = {
+  [RENDER_MODE_LITERAL] = "literal",
+  [RENDER_MODE_SMART]   = "smart",
+};
 
 const struct parser_defn *parser_defs[] = {
 LIBXML2_PARSERS
@@ -51,11 +56,14 @@ static void usage(FILE *out) {
           "       %s -help                 show help\n"
           "       %s [OPTIONS] [FILENAME]  process FILENAME or stdin\n\n"
           "OPTIONS\n"
-	  "  -verbose        show verbose output\n"
-          "  -comment        include comments\n"
-          "  -cdata=comment  treat CDATA sections as comment\n"
-          "  -cdata=text     treat CDATA sections as text (default)\n"
-          "  -parser=PARSER  use PARSER parser\n",
+          "  -verbose          show verbose output\n"
+          "  -comment          include comments\n"
+          "  -cdata=comment    treat CDATA sections as comment\n"
+          "  -cdata=text       treat CDATA sections as text (default)\n"
+          "  -parser=PARSER    use PARSER parser\n"
+          "  -confdir=CONFDIR  set configuration search path; subsequently prepend to it\n"
+          "  -render=MODE      set rendering mode\n"
+          ,
           program_invocation_short_name,
           program_invocation_short_name,
           program_invocation_short_name);
@@ -75,6 +83,12 @@ void list_parsers(FILE *stream) {
     fprintf(stream, "  %s\n", parser_defs[i]->name);
 }
 
+void list_render_modes(FILE *stream) {
+  fprintf(stream, "Render modes:\n");
+  for (int i = 0; i < RENDER_MODE_MAX; i++)
+    fprintf(stream, "  %s\n", render_mode_names[i]);
+}
+
 int find_parser(const char *name) {
   int i;
   for (i = 0; i < num_parsers && strcmp(parser_defs[i]->name, name); i++);
@@ -92,7 +106,7 @@ void init_parsers(void) {
     if (p->def->imatch_pat) {
       rc = regcomp(&p->match_re, p->def->imatch_pat, REG_EXTENDED | REG_ICASE);
       if (rc != 0)
-	logv("error compiling regex for choosing %s parser\n", p->def->name);
+        logv("error compiling regex for choosing %s parser\n", p->def->name);
       else
         p->has_matcher = true;
     }
@@ -148,6 +162,8 @@ static void parse_options(int argc, char *argv[]) {
     { "cdata",   required_argument, 0, OPT_CDATA },
     { "parser",  required_argument, 0, OPT_PARSER },
     { "verbose", no_argument,       0, OPT_VERBOSE },
+    { "confdir", required_argument, 0, OPT_CONFDIR },
+    { "render",  required_argument, 0, OPT_RENDER },
     { nullptr }
   };
   int option_index;
@@ -184,7 +200,34 @@ static void parse_options(int argc, char *argv[]) {
       }
       break;
     case OPT_VERBOSE:
-      opt.verbose = true;
+      opt.verbosity++;
+      break;
+    case OPT_CONFDIR:
+      {
+        struct config_dir *cd = calloc(1, sizeof *cd);
+        if (cd == NULL) {
+          fprintf(stderr, "could not allocate node: %s\n", strerror(errno));
+          opt.error = true;
+        } else {
+          if (optarg[0] == '+' && !opt.confdirs) {
+            cd->dir = optarg + 1;
+            cd->next = get_defconf();
+          } else {
+            cd->dir = optarg;
+            cd->next = opt.confdirs;
+          }
+          cd->node_needs_free = true;
+          opt.confdirs = cd;
+        }
+      }
+      break;
+    case OPT_RENDER:
+      for (opt.render_mode = 0;
+           opt.render_mode < RENDER_MODE_MAX &&
+             strcmp(optarg, render_mode_names[opt.render_mode]);
+           opt.render_mode++);
+      if (opt.render_mode == RENDER_MODE_MAX)
+        opt.error = true;
       break;
     case -1:
       /* EOF */
@@ -202,6 +245,18 @@ static void parse_options(int argc, char *argv[]) {
 
   if (optind < argc)
     opt.error = true;
+}
+
+static void free_options(void) {
+  struct config_dir **cdp, *cd;
+
+  for (cdp = &opt.confdirs; (cd = *cdp);) {
+    *cdp = cd->next;
+    if (cd->name_needs_free)
+      free(cd->dir);
+    if (cd->node_needs_free)
+      free(cd);
+  }
 }
 
 static size_t max_input_buffer(void) {
@@ -239,6 +294,7 @@ int main(int argc, char *argv[]) {
 
   if (opt.error) {
     usage(stderr);
+    free_options();
     return EXIT_FAILURE;
   }
 
@@ -250,13 +306,16 @@ int main(int argc, char *argv[]) {
             "\nMaximum input size: %.1fMB\n",
             max_buf / (1024.0 * 1024.0));
     list_parsers(stdout);
+    list_render_modes(stdout);
   }
 
   if (opt.version)
     version(stdout);
 
   if (opt.help || opt.version)
-    return EXIT_SUCCESS;
+    goto finish;
+
+  load_config(opt.confdirs ? opt.confdirs : get_defconf());
 
   if (opt.file) {
     rc = map_file(&input, max_buf, opt.file);
@@ -282,5 +341,7 @@ int main(int argc, char *argv[]) {
   free_map(&input);
   free_parsers();
 
+finish:
+  free_options();
   return EXIT_SUCCESS;
 }
