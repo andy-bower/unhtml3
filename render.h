@@ -8,7 +8,7 @@
 #include <uchar.h>
 #include <libxml/xmlstring.h>
 
-extern void render_element(const char8_t *tag, bool end);
+extern void render_element(const char8_t *tag, bool end, const struct render_elem *rendering);
 extern void render_text(const char8_t *text);
 
 #endif

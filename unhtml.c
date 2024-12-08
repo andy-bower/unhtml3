@@ -37,8 +37,8 @@ enum opt:int {
 struct options opt;
 
 const char *render_mode_names[RENDER_MODE_MAX] = {
-  [RENDER_MODE_LITERAL] = "literal",
-  [RENDER_MODE_SMART]   = "smart",
+  [RENDER_MODE_LITERAL]     = "literal",
+  [RENDER_MODE_SMART_SPACE] = "smart-space",
 };
 
 const struct parser_defn *parser_defs[] = {

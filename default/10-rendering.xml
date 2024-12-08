@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<config xmlns="tag:cdefg.uk,2024:sw/unhtml/config">
+<config xmlns="tag:sw.cdefg.uk,2024:unhtml/config">
+  <!-- SPDX-License-Identifier: MIT -->
+  <!-- SPDX-FileCopyrightText: (c) Copyright 2024 Andrew Bower <andrew@bower.uk> -->
+
   <elements op="replace">
+
+    <!-- Define spacing for these elements -->
     <element tag="p" spacing="para"/>
     <element tag="div" spacing="para"/>
     <element tag="h1" spacing="para"/>
@@ -11,5 +16,11 @@
     <element tag="h6" spacing="para"/>
     <element tag="br" spacing="newline"/>
     <element tag="li" spacing="newline"/>
+
+    <!-- Skip the contents of these elements -->
+    <element tag="svg" skip="skip"/>
+    <element tag="math" skip="skip"/>
+    <element tag="style" skip="skip"/>
+    <element tag="script" skip="skip"/>
   </elements>
 </config>

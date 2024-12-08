@@ -7,21 +7,11 @@
  * only text content. The output is in UTF-8.
  */
 
-#include <err.h>
-#include <fcntl.h>
-#include <string.h>
-#include <getopt.h>
+#include <uchar.h>
 #include <libxml/HTMLparser.h>
 #include <libxml/parser.h>
-#include <errno.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/mman.h>
-#include <sys/resource.h>
-#include <sys/stat.h>
 
+#include "config.h"
 #include "render.h"
 #include "parse-libxml2.h"
 
@@ -29,6 +19,7 @@ static void walk_tree(xmlNode *node) {
   /* By default, neither render content nor descend tree further */
   bool follow = false;
   bool content = false;
+  const struct render_elem *rendering = nullptr;
 
   switch (node->type) {
   case XML_CDATA_SECTION_NODE:
@@ -46,9 +37,8 @@ static void walk_tree(xmlNode *node) {
     follow = true;
     break;
   case XML_ELEMENT_NODE:
-    if (xmlStrcasecmp(node->name, u8"SCRIPT") &&
-        xmlStrcasecmp(node->name, u8"STYLE"))
-      follow = true;
+    rendering = get_rendering(node->name);
+    follow = true;
     break;
   default:
     /* Do nothing */
@@ -58,11 +48,11 @@ static void walk_tree(xmlNode *node) {
     render_text(node->content);
 
   if (follow) {
-    for (xmlNode *child = node->children; child; child = child->next) {
-      render_element(node->name, false);
-      walk_tree(child);
-      render_element(node->name, true);
-    }
+    render_element(node->name, false, rendering);
+    if (!rendering || !rendering->skip)
+      for (xmlNode *child = node->children; child; child = child->next)
+        walk_tree(child);
+    render_element(node->name, true, rendering);
   }
 }
 

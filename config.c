@@ -19,7 +19,7 @@
 
 struct config config;
 
-static const char8_t *config_ns = u8"tag:cdefg.uk,2024:sw/unhtml/config";
+static const char8_t *config_ns = u8"tag:sw.cdefg.uk,2024:unhtml/config";
 
 static int element_compar(const void *a, const void *b) {
   struct render_elem *aa = (struct render_elem *) a;
@@ -43,6 +43,14 @@ static enum spacing get_spacing(xmlNode *node) {
     return SPACING_NEWLINE;
   else
     return OP_ADD;
+}
+
+static bool get_skip(xmlNode *node) {
+  const xmlChar *attr = xmlGetProp(node, u8"skip");
+  if (!xmlStrcmp(attr, u8"skip"))
+    return true;
+  else
+    return false;
 }
 
 static void print_action(const void *node, VISIT which, int depth) {
@@ -100,6 +108,7 @@ int load_config_file(xmlParserCtxtPtr ctx, const char *file) {
               void *result;
 
               r->spacing = get_spacing(atom);
+              r->skip = get_skip(atom);
               memcpy(r->tag, attr, attr_len + 1);
               result = tsearch(r, &config.elements, element_compar);
               if (result == NULL)

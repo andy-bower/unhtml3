@@ -22,6 +22,7 @@ enum op {
 
 struct render_elem {
   enum spacing spacing;
+  bool skip;
   xmlChar tag[];
 };
 

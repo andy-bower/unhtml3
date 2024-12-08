@@ -10,6 +10,7 @@
 #include <uchar.h>
 #include <gumbo.h>
 
+#include "config.h"
 #include "render.h"
 #include "parse-gumbo.h"
 
@@ -18,6 +19,7 @@ static void walk_tree(GumboNode *node) {
   GumboVector *children = nullptr;
   GumboText *text = nullptr;
   const char8_t *tag = nullptr;
+  const struct render_elem *rendering = nullptr;
 
   switch (node->type) {
   case GUMBO_NODE_CDATA:
@@ -36,15 +38,10 @@ static void walk_tree(GumboNode *node) {
     children = &node->v.document.children;
     break;
   case GUMBO_NODE_ELEMENT:
-    switch (node->v.element.tag) {
-    case GUMBO_TAG_SCRIPT:
-    case GUMBO_TAG_STYLE:
-      /* Do not render content of these tags */
-      break;
-    default:
-      children = &node->v.element.children;
-    if (node->v.element.tag < GUMBO_TAG_UNKNOWN)
+    children = &node->v.element.children;
+    if (node->v.element.tag < GUMBO_TAG_UNKNOWN) {
       tag = (char8_t *) gumbo_normalized_tagname(node->v.element.tag);
+      rendering = get_rendering(tag);
     }
     break;
   default:
@@ -54,14 +51,13 @@ static void walk_tree(GumboNode *node) {
   if (text)
     render_text((char8_t *) text->text);
 
-  if (children)
-    for (int child = 0; child < children->length; child++) {
-      if (tag)
-        render_element(tag, false);
-      walk_tree((GumboNode *) children->data[child]);
-      if (tag)
-        render_element(tag, false);
-    }
+  if (children) {
+    render_element(tag, false, rendering);
+    if (!rendering || !rendering->skip)
+      for (int child = 0; child < children->length; child++)
+        walk_tree((GumboNode *) children->data[child]);
+    render_element(tag, true, rendering);
+  }
 }
 
 int parse_tagsoup(struct mapped_buffer *input) {

@@ -15,11 +15,12 @@ enum render_state {
 
 enum render_state state = STATE_NEWLINE;
 
-void render_element(const char8_t *tag, bool end) {
+void render_element(const char8_t *tag, bool end, const struct render_elem *rendering) {
   if (opt.render_mode == RENDER_MODE_LITERAL)
     return;
 
-  struct render_elem *rendering = get_rendering(tag);
+  if (!rendering)
+    rendering = get_rendering(tag);
 
   if (rendering) {
     switch (rendering->spacing) {

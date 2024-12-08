@@ -14,7 +14,7 @@
 .Op Fl comment
 .Op Fl cdata Ar text | comment
 .Op Fl parser Ar html | xml | tagsoup
-.Op Fl render Ar literal | smart
+.Op Fl render Ar literal | smart-space
 .Op Fl confdir Ar CONFDIR
 .Op Ar FILENAME.html
 .Sh DESCRIPTION
@@ -58,8 +58,8 @@ Choose a rendering style:
 .Ql literal
 to pass through all spacing or lack thereof from the marked-up text including
 control characters or
-.Ql smart
-to apply rules based on the elements present in the markup.
+.Ql smart-space
+to apply rules based on the elements present in the markup to control spacing.
 .It Fl confdir
 Set a directory from which to find config files in XML format with a
 .Ql .xml
@@ -76,7 +76,7 @@ read. Files within the appropriate namespace include rendering instructions
 by element tag. See example:
 .Bd -literal -offset indent
 <?xml version="1.0" encoding="utf-8"?>
-<config xmlns="tag:cdefg.uk,2024:sw/unhtml/config">
+<config xmlns="tag:sw.cdefg.uk,2024:unhtml/config">
   <elements op="add">
     <element tag="p" spacing="para"/>
     <element tag="li" spacing="newline"/>
@@ -99,14 +99,11 @@ Convert XHTML on stdin into text on stdout with smart rendering.
 .Dl unhtml -parser xml -render smart < index.xhtml
 .Sh FILES
 .Bl -tag -width Ds
-.It
-.Pa ${XDG_CONFIG_HOME}/unhtml
+.It Pa ${XDG_CONFIG_HOME}/unhtml
 Directory containing the local user's configuration files.
-.It
-.Pa /etc/unhtml
+.It Pa /etc/unhtml
 Directory containing system configutation files.
-.It
-.Pa /usr/share/unhtml
+.It Pa /usr/share/unhtml
 Directory containing default configuration files shipped with the application.
 .El
 .Sh SEE ALSO

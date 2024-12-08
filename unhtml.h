@@ -21,7 +21,7 @@
 
 enum render_mode {
   RENDER_MODE_LITERAL = 0,
-  RENDER_MODE_SMART,
+  RENDER_MODE_SMART_SPACE,
   RENDER_MODE_MAX,
 };
 
