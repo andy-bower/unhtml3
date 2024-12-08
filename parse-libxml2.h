@@ -23,7 +23,7 @@ static const struct parser_defn parser_html = {
 static const struct parser_defn parser_xml = {
   .name       = "xml",
   .parse_fn   = parse_xml,
-  .imatch_pat = "<\?xml|<!DOCTYPE +html +PUBLIC +\"-//W3C//DTD +XHTML",
+  .imatch_pat = "<\\?xml|<!DOCTYPE +html +PUBLIC +\"-//W3C//DTD +XHTML",
 };
 
 #endif
