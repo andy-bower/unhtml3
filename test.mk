@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: (c) Copyright 2024 Andrew Bower <andrew@bower.uk>
 
+# Command to unvoke unhtml as if it were installed
+TEST_INVOKE_UNHTML=$(name) -confdir default
+
 .PHONY: check debug clean-tests check-testfiles check-xml
 
 check: check-xml check-testfiles
@@ -19,7 +22,7 @@ check-xml:
 # The 'debug' target shows any difference at all.
 
 $(testfiles)%.tmp: $(testfiles)%.html $(name)
-	@./$(name) $< > $@
+	./$(TEST_INVOKE_UNHTML) $< > $@
 
 $(testfiles)%.result: $(testfiles)%.out $(testfiles)%.tmp
 	@$(LOOSE_DIFF) $^ && echo $(patsubst %.result,%,$@) > $@ || truncate -s 0 $@
